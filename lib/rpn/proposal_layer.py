@@ -26,8 +26,9 @@ class ProposalLayer(caffe.Layer):
         layer_params = yaml.load(self.param_str_)
 
         self._feat_stride = layer_params['feat_stride']
-        anchor_scales = layer_params.get('scales', (8, 16, 32))
-        self._anchors = generate_anchors(scales=np.array(anchor_scales))
+        anchor_scales = layer_params.get('scales', (16, 32, 64))
+        self._anchors = generate_anchors(base_size=self._feat_stride,
+                                         scales=np.array(anchor_scales))
         self._num_anchors = self._anchors.shape[0]
 
         if DEBUG:
@@ -105,8 +106,8 @@ class ProposalLayer(caffe.Layer):
         # Transpose and reshape predicted bbox transformations to get them
         # into the same order as the anchors:
         #
-        # bbox deltas will be (1, 4 * A, H, W) format
-        # transpose to (1, H, W, 4 * A)
+        # bbox deltas will be (1, A * 4, H, W) format
+        # transpose to (1, H, W, A * 4)
         # reshape to (1 * H * W * A, 4) where rows are ordered by (h, w, a)
         # in slowest to fastest order
         bbox_deltas = bbox_deltas.transpose((0, 2, 3, 1)).reshape((-1, 4))
