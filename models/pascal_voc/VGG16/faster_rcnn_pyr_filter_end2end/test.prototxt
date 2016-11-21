@@ -595,7 +595,7 @@ layer {
   name: "rpn_bbox_pred"
   type: "Concat"
   bottom: "rpn_bbox_pred_s"
-  bottom: "prn_bbox_pred_m"
+  bottom: "rpn_bbox_pred_m"
   bottom: "rpn_bbox_pred_l"
   top: "rpn_bbox_pred"
   concat_param {
