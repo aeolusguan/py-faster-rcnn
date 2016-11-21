@@ -370,7 +370,7 @@ layer {
 
 #========= RPN ============
 # the suffix "_s" of layer name stands for small size;
-# and also "-m" for medium and "-l" stands for large for the following layers
+# and also "_m" for medium and "_l" stands for large for the following layers
 layer {
   name: "rpn_conv/3x3_s"
   type: "Convolution"
@@ -427,51 +427,6 @@ layer {
    name: "rpn_cls_score_reshape_s"
    type: "Reshape"
    reshape_param { shape { dim: 0 dim: 2 dim: -1 dim: 0 } }
-}
-
-layer {
-  name: 'rpn-data_s'
-  type: 'Python'
-  bottom: 'rpn_cls_score_s'
-  bottom: 'gt_boxes'
-  bottom: 'im_info'
-  bottom: 'data'
-  top: 'rpn_labels_s'
-  top: 'rpn_bbox_targets_s'
-  top: 'rpn_bbox_inside_weights_s'
-  top: 'rpn_bbox_outside_weights_s'
-  python_param {
-    module: 'rpn.anchor_target_layer'
-    layer: 'AnchorTargetLayer'
-    param_str: "'feat_stride': 8\n'scales': [16]"
-  }
-}
-
-layer {
-  name: "rpn_loss_cls_s"
-  type: "SoftmaxWithLoss"
-  bottom: "rpn_cls_score_reshape_s"
-  bottom: "rpn_labels_s"
-  propagate_down: 1
-  propagate_down: 0
-  top: "rpn_cls_loss_s"
-  loss_weight: 1
-  loss_param {
-    ignore_label: -1
-    normalize: true
-  }
-}
-
-layer {
-  name: "rpn_loss_bbox_s"
-  type: "SmoothL1Loss"
-  bottom: "rpn_bbox_pred_s"
-  bottom: "rpn_bbox_targets_s"
-  bottom: 'rpn_bbox_inside_weights_s'
-  bottom: 'rpn_bbox_outside_weights_s'
-  top: "rpn_loss_bbox_s"
-  loss_weight: 1
-  smooth_l1_loss_param { sigma: 3.0 }
 }
 
 ## medium scale
@@ -531,51 +486,6 @@ layer {
    name: "rpn_cls_score_reshape_m"
    type: "Reshape"
    reshape_param { shape { dim: 0 dim: 2 dim: -1 dim: 0 } }
-}
-
-layer {
-  name: 'rpn-data_m'
-  type: 'Python'
-  bottom: 'rpn_cls_score_m'
-  bottom: 'gt_boxes'
-  bottom: 'im_info'
-  bottom: 'data'
-  top: 'rpn_labels_m'
-  top: 'rpn_bbox_targets_m'
-  top: 'rpn_bbox_inside_weights_m'
-  top: 'rpn_bbox_outside_weights_m'
-  python_param {
-    module: 'rpn.anchor_target_layer'
-    layer: 'AnchorTargetLayer'
-    param_str: "'feat_stride': 8\n'scales': [32]"
-  }
-}
-
-layer {
-  name: "rpn_loss_cls_m"
-  type: "SoftmaxWithLoss"
-  bottom: "rpn_cls_score_reshape_m"
-  bottom: "rpn_labels_m"
-  propagate_down: 1
-  propagate_down: 0
-  top: "rpn_cls_loss_m"
-  loss_weight: 1
-  loss_param {
-    ignore_label: -1
-    normalize: true
-  }
-}
-
-layer {
-  name: "rpn_loss_bbox_m"
-  type: "SmoothL1Loss"
-  bottom: "rpn_bbox_pred_m"
-  bottom: "rpn_bbox_targets_m"
-  bottom: 'rpn_bbox_inside_weights_m'
-  bottom: 'rpn_bbox_outside_weights_m'
-  top: "rpn_loss_bbox_m"
-  loss_weight: 1
-  smooth_l1_loss_param { sigma: 3.0 }
 }
 
 ## large scale
@@ -638,51 +548,22 @@ layer {
 }
 
 layer {
-  name: 'rpn-data_l'
+  name: 'rpn-data'
   type: 'Python'
-  bottom: 'rpn_cls_score_l'
+  bottom: 'conv5_3'
   bottom: 'gt_boxes'
   bottom: 'im_info'
   bottom: 'data'
-  top: 'rpn_labels_l'
-  top: 'rpn_bbox_targets_l'
-  top: 'rpn_bbox_inside_weights_l'
-  top: 'rpn_bbox_outside_weights_l'
+  top: 'rpn_labels'
+  top: 'rpn_bbox_targets'
+  top: 'rpn_bbox_inside_weights'
+  top: 'rpn_bbox_outside_weights'
   python_param {
     module: 'rpn.anchor_target_layer'
     layer: 'AnchorTargetLayer'
-    param_str: "'feat_stride': 8\n'scales': [64]"
+    param_str: "'feat_stride': 8\n'scales': [16, 32, 64]"
   }
 }
-
-layer {
-  name: "rpn_loss_cls_l"
-  type: "SoftmaxWithLoss"
-  bottom: "rpn_cls_score_reshape_l"
-  bottom: "rpn_labels_l"
-  propagate_down: 1
-  propagate_down: 0
-  top: "rpn_cls_loss_l"
-  loss_weight: 1
-  loss_param {
-    ignore_label: -1
-    normalize: true
-  }
-}
-
-layer {
-  name: "rpn_loss_bbox_l"
-  type: "SmoothL1Loss"
-  bottom: "rpn_bbox_pred_l"
-  bottom: "rpn_bbox_targets_l"
-  bottom: 'rpn_bbox_inside_weights_l'
-  bottom: 'rpn_bbox_outside_weights_l'
-  top: "rpn_loss_bbox_l"
-  loss_weight: 1
-  smooth_l1_loss_param { sigma: 3.0 }
-}
-
-#========= RoI Proposal ============
 
 layer {
   name: "rpn_cls_score_reshape"
@@ -695,18 +576,20 @@ layer {
     axis: 2
   }
 }
+
 layer {
-  name: "rpn_cls_prob"
-  type: "Softmax"
+  name: "rpn_loss_cls"
+  type: "SoftmaxWithLoss"
   bottom: "rpn_cls_score_reshape"
-  top: "rpn_cls_prob"
-}
-layer {
-  name: 'rpn_cls_prob_reshape'
-  type: 'Reshape'
-  bottom: 'rpn_cls_prob'
-  top: 'rpn_cls_prob_reshape'
-  reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
+  bottom: "rpn_labels"
+  propagate_down: 1
+  propagate_down: 0
+  top: "rpn_cls_loss"
+  loss_weight: 1
+  loss_param {
+    ignore_label: -1
+    normalize: true
+  }
 }
 
 layer {
@@ -719,6 +602,33 @@ layer {
   concat_param {
     axis: 1
   }
+}
+layer {
+  name: "rpn_loss_bbox"
+  type: "SmoothL1Loss"
+  bottom: "rpn_bbox_pred"
+  bottom: "rpn_bbox_targets"
+  bottom: 'rpn_bbox_inside_weights'
+  bottom: 'rpn_bbox_outside_weights'
+  top: "rpn_loss_bbox"
+  loss_weight: 1
+  smooth_l1_loss_param { sigma: 3.0 }
+}
+
+#========= RoI Proposal ============
+
+layer {
+  name: "rpn_cls_prob"
+  type: "Softmax"
+  bottom: "rpn_cls_score_reshape"
+  top: "rpn_cls_prob"
+}
+layer {
+  name: 'rpn_cls_prob_reshape'
+  type: 'Reshape'
+  bottom: 'rpn_cls_prob'
+  top: 'rpn_cls_prob_reshape'
+  reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
 }
 
 layer {
