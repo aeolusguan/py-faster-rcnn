@@ -165,6 +165,8 @@ class AnchorTargetLayer(caffe.Layer):
 
         # subsample negative labels if we have too many
         num_bg = cfg.TRAIN.RPN_BATCHSIZE - np.sum(labels == 1)
+        #num_bg = min(num_bg, cfg.TRAIN.RPN_MAX_NEG_RATIO * np.sum(labels == 1))
+        #num_bg = max(num_bg, cfg.TRAIN.RPN_MIN_BATCHSIZE - np.sum(labels == 1))
         bg_inds = np.where(labels == 0)[0]
         if len(bg_inds) > num_bg:
             disable_inds = npr.choice(

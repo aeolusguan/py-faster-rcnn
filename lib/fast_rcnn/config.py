@@ -108,6 +108,10 @@ __C.TRAIN.RPN_CLOBBER_POSITIVES = False
 __C.TRAIN.RPN_FG_FRACTION = 0.5
 # Total number of examples
 __C.TRAIN.RPN_BATCHSIZE = 256
+# Minibatch size should be greater than RPN_MIN_BATCH_SIZE
+__C.TRAIN.RPN_MIN_BATCHSIZE = 32
+# Ratio of negative and positive samples in a minibatch should be less than RPN_MAX_NEG_RATIO
+__C.TRAIN.RPN_MAX_NEG_RATIO = 3
 # NMS threshold used on RPN proposals
 __C.TRAIN.RPN_NMS_THRESH = 0.7
 # Number of top scoring boxes to keep before apply NMS to RPN proposals
@@ -173,7 +177,7 @@ __C.TEST.RPN_MIN_SIZE = 16
 # coordinates. If DEDUP_BOXES > 0, then DEDUP_BOXES is used as the scale factor
 # for identifying duplicate boxes.
 # 1/16 is correct for {Alex,Caffe}Net, VGG_CNN_M_1024, and VGG16
-__C.DEDUP_BOXES = 1./8.
+__C.DEDUP_BOXES = 1./16.
 
 # Pixel mean values (BGR order) as a (1, 1, 3) array
 # We use the same pixel mean for all networks even though it's not exactly what
