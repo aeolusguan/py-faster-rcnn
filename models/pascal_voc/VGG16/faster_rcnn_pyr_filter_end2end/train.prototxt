@@ -868,7 +868,7 @@ layer {
   }
 }
 
-### online hard example mining ###
+#==============ohem==============
 layer {
    name: "per_roi_loss_cls"
    type: "SoftmaxWithLossOHEM"
@@ -900,26 +900,57 @@ layer {
 }
 
 layer {
-  name: "per_anchor_loss"
+  name: "per_roi_loss"
   type: "Eltwise"
-  bottom: "per_anchor_loss_cls"
-  bottom: "per_anchor_loss_bbox"
-  top: "per_anchor_loss"
+  bottom: "per_roi_loss_cls"
+  bottom: "per_roi_loss_bbox"
+  top: "per_roi_loss"
   propagate_down: false
   propagate_down: false
 }
 
-### end of online hard example mining
+layer {
+  name: "annotator_detector"
+  type: "BoxAnnotatorOHEM"
+  bottom: "rois"
+  bottom: "per_roi_loss"
+  bottom: "labels"
+  bottom: "bbox_inside_weights"
+  top: "labels_ohem"
+  top: "bbox_loss_weights_ohem"
+  box_annotator_ohem_param {
+    roi_per_img: 128
+    ignore_label: -1
+  }
+  propagate_down: false
+  propagate_down: false
+  propagate_down: false
+  propagate_down: false
+}
 
+layer {
+  name: "silence"
+  type: "Silence"
+  bottom: "bbox_outside_weights"
+  bottom: "temp_loss_cls"
+  bottom: "temp_prob_cls"
+  bottom: "temp_loss_bbox"
+}
+
+#-------------------loss---------------------
 layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
   bottom: "cls_score"
-  bottom: "labels"
-  propagate_down: 1
-  propagate_down: 0
+  bottom: "labels_ohem"
   top: "loss_cls"
   loss_weight: 1
+  loss_param {
+    ignore_label: -1
+  }
+  propagate_down: true
+  propagate_down: false
+  
 }
 layer {
   name: "loss_bbox"
