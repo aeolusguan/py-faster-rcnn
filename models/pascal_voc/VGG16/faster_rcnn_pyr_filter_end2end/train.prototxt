@@ -298,7 +298,7 @@ layer {
 
 #========= RPN ============
 # the suffix "_t" of layer name stands for tiny size;
-# and also "_s" for small, "_m" for medium and "_l" stands for large 
+# and also "_s" for small, "_m" for medium and "_l" stands for large
 # for the following layers
 
 ## tiny scale
@@ -868,7 +868,7 @@ layer {
   }
 }
 
-### online hard example mining ###
+#-----------------------online hard example mining----------------------
 layer {
    name: "per_roi_loss_cls"
    type: "SoftmaxWithLossOHEM"
@@ -900,34 +900,85 @@ layer {
 }
 
 layer {
-  name: "per_anchor_loss"
+  name: "per_roi_loss"
   type: "Eltwise"
-  bottom: "per_anchor_loss_cls"
-  bottom: "per_anchor_loss_bbox"
+  bottom: "per_roi_loss_cls"
+  bottom: "per_roi_loss_bbox"
   top: "per_anchor_loss"
   propagate_down: false
   propagate_down: false
 }
 
-### end of online hard example mining
+layer {
+  name: "annotator_detector"
+  type: "BoxAnnotatorOHEM"
+  bottom: "rois"
+  bottom: "per_roi_loss"
+  bottom: "labels"
+  bottom: "bbox_inside_weights"
+  top: "labels_ohem"
+  top: "bbox_loss_weights_ohem"
+  box_annotator_ohem_param {
+    roi_per_img: 128
+    ignore_label: -1
+  }
+  propagate_down: false
+  propagate_down: false
+  propagate_down: false
+  propagate_down: false
+}
 
+layer {
+   name: "silence"
+   type: "Silence"
+   bottom: "bbox_outside_weights"
+   bottom: "temp_loss_cls"
+   bottom: "temp_prob_cls"
+   bottom: "temp_loss_bbox"
+}
+
+#---------------------------output----------------------------
 layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
   bottom: "cls_score"
-  bottom: "labels"
-  propagate_down: 1
-  propagate_down: 0
+  bottom: "labels_ohem"
   top: "loss_cls"
   loss_weight: 1
+  loss_param {
+    ignore_label: -1
+  }
+  propagate_down: true
+  propagate_down: false
 }
+
+layer {
+   name: "accuarcy"
+   type: "Accuracy"
+   bottom: "cls_score"
+   bottom: "labels_ohem"
+   top: "accuarcy"
+   #include: { phase: TEST }
+   accuracy_param {
+        ignore_label: -1
+   }
+   propagate_down: false
+   propagate_down: false
+}
+
 layer {
   name: "loss_bbox"
-  type: "SmoothL1Loss"
+  type: "SmoothL1LossOHEM"
   bottom: "bbox_pred"
   bottom: "bbox_targets"
-  bottom: "bbox_inside_weights"
-  bottom: "bbox_outside_weights"
+  bottom: "bbox_loss_weights_ohem"
   top: "loss_bbox"
   loss_weight: 1
+  loss_param {
+    normalization: PRE_FIXED
+    pre_fixed_normalizer: 128
+  }
+  propagate_down: true
+  propagate_down: false
+  propagate_down: false
 }
